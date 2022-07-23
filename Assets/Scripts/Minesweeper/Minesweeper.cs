@@ -33,7 +33,8 @@ public class Minesweeper : Game
 
     static bool isFlagInput = false;
 
-    Cell[,] cells;
+    Dictionary<Vector3Int, Cell> cells = new();
+    Dictionary<Vector3Int, Cell> startingCells = new();
 
     public static void SwitchToInput(bool newIsFlagInput)
     {
@@ -63,9 +64,8 @@ public class Minesweeper : Game
     protected override void NewGame()
     {
         Bombs = totalBombs;
-        cells = new Cell[width, height];
         GenerateCells();
-        board.DrawBoard(cells);
+        board.DrawBoard(cells, new Vector2Int(width, height));
         size = new Vector2(width * board.tilemap.cellSize.x, height * board.tilemap.cellSize.y);
 
         InputHandler.current.TakingInput = true;
@@ -82,7 +82,7 @@ public class Minesweeper : Game
         GenerateBombs(startCellPosition);
         GenerateNumbers();
 
-        board.DrawBoard(cells);
+        board.DrawBoard(cells, new Vector2Int(width, height));
 
         state = State.PLAYING;
     }
@@ -100,7 +100,8 @@ public class Minesweeper : Game
                     type = Cell.Type.NUMBER,
                 };
 
-                cells[x, y] = cell;
+                if (cells.ContainsKey(cell.position)) cells[cell.position] = cell;
+                else cells.Add(cell.position, cell);
             }
         }
         unRevealedCells = (width * height) - totalBombs;
@@ -109,11 +110,12 @@ public class Minesweeper : Game
     //set some cells to bombs
     void GenerateBombs(Vector3Int startCellPosition)
     {
-        if (totalBombs >= cells.Length - startCellCount) 
+        startingCells = AdjacentCells(startCellPosition);
+        if (totalBombs >= cells.Count - startCellCount) 
         {
             var bombAmount = 0;
-            foreach (Cell cell in cells) { SetCell(BombCell, cell.position); bombAmount++; }
-            foreach (Cell cell in AdjacentCells(startCellPosition)) { SetCell(NumberCell, cell.position); bombAmount--; }
+            foreach (var pair in cells) { SetCell(BombCell, pair.Value.position); bombAmount++; }
+            foreach (var pair in AdjacentCells(startCellPosition)) { SetCell(NumberCell, pair.Value.position); bombAmount--; }
             SetCell(NumberCell, startCellPosition);
             bombAmount--;
             Bombs = bombAmount;
@@ -129,10 +131,11 @@ public class Minesweeper : Game
     //sets a random empty cell to a bomb
     void SetRandomBombCell(Vector3Int startCellPosition)
     {
-        var cell = cells[Random.Range(0, width), Random.Range(0, height)];
+        var cell = cells[new Vector3Int(Random.Range(0, width), Random.Range(0, height))];
 
         if (cell.position == startCellPosition) { SetRandomBombCell(startCellPosition); return; }
-        foreach (Cell StartingCell in AdjacentCells(startCellPosition)) if (cell.position == StartingCell.position) { SetRandomBombCell(startCellPosition); return; }
+
+        foreach (var pair in startingCells) if (cell.position == pair.Value.position) { SetRandomBombCell(startCellPosition); return; }
 
         if (cell.type == Cell.Type.NUMBER && cell.position != startCellPosition) SetCell(BombCell, cell.position);
         else SetRandomBombCell(startCellPosition);
@@ -140,28 +143,33 @@ public class Minesweeper : Game
 
     void GenerateNumbers()
     {
-        foreach(Cell cell in cells)
+        var update = cells;
+        foreach(var pair in cells)
         {
+            var cell = pair.Value;
             if (cell.type == Cell.Type.BOMB) continue;
 
-            cells[cell.position.x, cell.position.y].number = CountCellNumber(cell);
+            var newCell = cell;
+            newCell.number = CountCellNumber(cell);
+            update[cell.position] = newCell;
         }
+        cells = update;
     }
 
     int CountCellNumber(Cell cell)
     {
         int count = 0;
 
-        foreach(Cell adjacentCell in AdjacentCells(cell.position))
+        foreach(var pair in AdjacentCells(cell.position))
         {
-            if (adjacentCell.type == Cell.Type.BOMB) count++;
+            if (pair.Value.type == Cell.Type.BOMB) count++;
         }
         return count; 
     }
 
-    Cell[] AdjacentCells(Vector3Int cellPosition)
+    Dictionary<Vector3Int, Cell> AdjacentCells(Vector3Int cellPosition)
     {
-        List<Cell> adjacentCells = new();
+        Dictionary<Vector3Int, Cell> adjacentCells = new();
         for (int ix = -1; ix <= 1; ix++)
         {
             for (int iy = -1; iy <= 1; iy++)
@@ -171,10 +179,10 @@ public class Minesweeper : Game
                 Vector3Int adjacent = new(cellPosition.x + ix, cellPosition.y + iy);
                 if (!IsValidCell(adjacent)) continue;
 
-                adjacentCells.Add(cells[adjacent.x, adjacent.y]);
+                adjacentCells.Add(adjacent, cells[adjacent]);
             }
         }
-        return adjacentCells.ToArray();
+        return adjacentCells;
     }
 
     protected override void InputTapped(Vector3 position)
@@ -185,7 +193,7 @@ public class Minesweeper : Game
 
         if (!isFlagInput)
         {
-            var cell = cells[cellPosition.x, cellPosition.y];
+            var cell = cells[cellPosition];
 
             if (state == State.START) StartGame(cellPosition);
             if (cell.revealed) ClickRevealedCell(cellPosition);
@@ -210,35 +218,35 @@ public class Minesweeper : Game
     {
         if (!IsValidCell(cellPosition)) return;
 
-        var cell = cells[cellPosition.x, cellPosition.y];
+        var cell = cells[cellPosition];
 
         cell = changeCell(cell);
 
         board.tilemap.SetTile(cellPosition, board.GetTile(cell));
-        cells[cellPosition.x, cellPosition.y] = cell;
+        cells[cellPosition] = cell;
     }
 
     //when the cell you clicked has been revealed
     void ClickRevealedCell(Vector3Int cellPosition)
     {
-        var clickedCell = cells[cellPosition.x, cellPosition.y];
+        var clickedCell = cells[cellPosition];
         var adjacentCells = AdjacentCells(cellPosition);
         var adjacentFlags = 0;
         var adjacentUnrevealedCells = 0;
         
-        foreach (Cell cell in adjacentCells)
+        foreach (var pair in adjacentCells)
         {
-            if (cell.flagged) adjacentFlags++;
-            if (!cell.revealed) adjacentUnrevealedCells++;
+            if (pair.Value.flagged) adjacentFlags++;
+            if (!pair.Value.revealed) adjacentUnrevealedCells++;
         }
 
         if (clickedCell.number <= adjacentFlags)
         {
-            foreach (Cell cell in adjacentCells) if (!cell.flagged && !cell.revealed) SetCell(RevealCell, cell.position);
+            foreach (var pair in adjacentCells) if (!pair.Value.flagged && !pair.Value.revealed) SetCell(RevealCell, pair.Value.position);
         }
         else if (clickedCell.number >= adjacentUnrevealedCells)
         {
-            foreach (Cell cell in adjacentCells) if (!cell.flagged && !cell.revealed) SetCell(FlagCell, cell.position);
+            foreach (var pair in adjacentCells) if (!pair.Value.flagged && !pair.Value.revealed) SetCell(FlagCell, pair.Value.position);
         }
     }
 
@@ -253,15 +261,14 @@ public class Minesweeper : Game
 
         if (!cell.revealed) unRevealedCells--;
         cell.revealed = true;
-        cells[cell.position.x, cell.position.y] = cell;
+        cells[cell.position] = cell;
 
         //if tile is empty reveal all cells around
         if (cell.type != Cell.Type.BOMB && cell.number == 0)
         {
-            foreach (Cell adjacentCell in AdjacentCells(cell.position))
+            foreach (var pair in AdjacentCells(cell.position))
             {
-                if (!adjacentCell.revealed) SetCell(RevealCell, adjacentCell.position);
-                Debug.Log(iterations++);
+                if (!pair.Value.revealed) SetCell(RevealCell, pair.Value.position);
             }
         }
         if (unRevealedCells == 0) CheckWin();
@@ -298,7 +305,7 @@ public class Minesweeper : Game
 
     void CheckWin()
     {
-        foreach (Cell cell in cells) if (!cell.revealed && cell.type == Cell.Type.NUMBER) unRevealedCells++;
+        foreach (var pair in cells) if (!pair.Value.revealed && pair.Value.type == Cell.Type.NUMBER) unRevealedCells++;
 
         if (unRevealedCells == 0) Invoke(nameof(Win), 0.3f);
     }
@@ -319,7 +326,7 @@ public class Minesweeper : Game
         Camera.main.transform.position = new Vector3(width / 2, height / 2, Camera.main.transform.position.z);
         InputHandler.current.TakingInput = false;
 
-        StartCoroutine("ExplodeAll");
+        StartCoroutine(nameof(ExplodeAll));
     }
 
     IEnumerator ExplodeAll()
@@ -328,11 +335,11 @@ public class Minesweeper : Game
 
         var waitTime = totalExplodeTime / totalBombs;
 
-        foreach (Cell cell in cells)
+        foreach (var pair in cells)
         {
-            if (cell.type == Cell.Type.BOMB)
+            if (pair.Value.type == Cell.Type.BOMB)
             {
-                SetCell(RevealCell, cell.position);
+                SetCell(RevealCell, pair.Value.position);
                 yield return new WaitForSeconds(waitTime - Time.deltaTime);
             }
         }
