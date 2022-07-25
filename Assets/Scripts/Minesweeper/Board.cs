@@ -25,17 +25,17 @@ public class Board : MonoBehaviour
         tilemap = GetComponent<Tilemap>();
     }
 
-    public void DrawBoard(Cell[,] cells)
+    public void DrawBoard(Dictionary<Vector3Int, Cell> cells, Vector2Int size)
     {
         tilemap.ClearAllTiles();
-        int width = cells.GetLength(0);
-        int height = cells.GetLength(1);
+        int width = size.x;
+        int height = size.y;
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Cell cell = cells[x, y];
+                Cell cell = (Cell)cells[new Vector3Int(x, y)];
                 tilemap.SetTile(cell.position, GetTile(cell));
             }
         }
