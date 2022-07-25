@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TMPro;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 
 public class Minesweeper : Game
@@ -242,6 +244,7 @@ public class Minesweeper : Game
         }
     }
 
+    Stopwatch stopWatch = new();
     //what value you want updated
     Cell RevealCell(Cell cell)
     {
@@ -258,11 +261,13 @@ public class Minesweeper : Game
         //if tile is empty reveal all cells around
         if (cell.type != Cell.Type.BOMB && cell.number == 0)
         {
+            if (!stopWatch.IsRunning) stopWatch.Start();
             foreach (Cell adjacentCell in AdjacentCells(cell.position))
             {
                 if (!adjacentCell.revealed) SetCell(RevealCell, adjacentCell.position);
-                Debug.Log(iterations++);
+                Debug.Log("iterations: " + iterations++);
             }
+            Debug.Log(stopWatch.ElapsedMilliseconds);
         }
         if (unRevealedCells == 0) CheckWin();
 
