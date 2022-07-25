@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TMPro;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 
 public class Minesweeper : Game
@@ -35,7 +37,6 @@ public class Minesweeper : Game
 
     Dictionary<Vector3Int, Cell> cells = new();
     Dictionary<Vector3Int, Cell> startingCells = new();
-    Dictionary<Vector3Int, Cell> FloodedCells = new();
 
     public static void SwitchToInput(bool newIsFlagInput)
     {
@@ -229,13 +230,13 @@ public class Minesweeper : Game
     }
 
     //update the values of a cells
-    void SetCell(Func<Cell, Cell> changeCell, Vector3Int cellPosition)
+    void SetCell(Func<Cell, Cell> changeFunc, Vector3Int cellPosition)
     {
         if (!IsValidCell(cellPosition)) return;
 
         var cell = cells[cellPosition];
 
-        cell = changeCell(cell);
+        cell = changeFunc(cell);
 
         board.tilemap.SetTile(cellPosition, board.GetTile(cell));
         cells[cellPosition] = cell;
@@ -274,42 +275,51 @@ public class Minesweeper : Game
             if (cell.type == Cell.Type.BOMB) Explode(cell.position);
         }
 
-        if (!cell.revealed) unRevealedCells--;
-        cell.revealed = true;
-        cells[cell.position] = cell;
-
         //if tile is empty reveal all cells around
         if (cell.type != Cell.Type.BOMB && cell.number == 0)
         {
             Flood(cell);
         }
 
+        if (!cell.revealed) unRevealedCells--;
+        cell.revealed = true;
+
         if (unRevealedCells == 0) CheckWin();
         return cell;
     }
     void Flood(Cell cell)
     {
-        Debug.Log(++iterations);
+        Queue<Cell> queue = new();
+        Dictionary<Vector3Int, Cell> floodedCells = new();
+        Stopwatch stopWatch = new();
+        queue.Enqueue(cell);
+        floodedCells.Add(cell.position, cell);
 
-        foreach (var pair in AdjacentCells(cell.position))
+        stopWatch.Start();
+        while (queue.Count != 0)
         {
-            var adjacentCell = pair.Value;
-            if (FloodedCells.ContainsKey(pair.Key)) continue;
+            var queuedCell = queue.Dequeue();
+            SetCell(RevealCellFlood, queuedCell.position);
 
-            FloodedCells.Add(pair.Key, adjacentCell);
-
-            SetCell(RevealCellFlood, adjacentCell.position);
-
-            if (adjacentCell.number != 0) continue;
-            Flood(adjacentCell);
+            Debug.Log("iterations: " + ++iterations + "\nQueue lenght: " + queue.Count);
+            if (queuedCell.number > 0) continue;
+            foreach (var pair in AdjacentCells(queuedCell.position))
+            {
+                if (floodedCells.ContainsKey(pair.Key)) continue;
+                var adjacentCell = pair.Value;
+                queue.Enqueue(adjacentCell);
+                floodedCells.Add(pair.Key, pair.Value);
+            }
         }
+        stopWatch.Stop();
+        Debug.Log(stopWatch.ElapsedMilliseconds + "ms");
 
+        floodedCells.Clear();
     }
     Cell RevealCellFlood(Cell cell)
     {
         if (!cell.revealed) unRevealedCells--;
         cell.revealed = true;
-        cells[cell.position] = cell;
 
         if (unRevealedCells == 0) CheckWin();
         return cell;
