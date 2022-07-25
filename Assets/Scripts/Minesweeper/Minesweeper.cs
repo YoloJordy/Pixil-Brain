@@ -303,18 +303,26 @@ public class Minesweeper : Game
 
             Debug.Log("iterations: " + ++iterations + "\nQueue lenght: " + queue.Count);
             if (queuedCell.number > 0) continue;
-            foreach (var pair in AdjacentCells(queuedCell.position))
+
+            for (int ix = -1; ix <= 1; ix++)
             {
-                if (floodedCells.ContainsKey(pair.Key)) continue;
-                var adjacentCell = pair.Value;
-                queue.Enqueue(adjacentCell);
-                floodedCells.Add(pair.Key, pair.Value);
+                for (int iy = -1; iy <= 1; iy++)
+                {
+                    if (ix == 0 && iy == 0) continue;
+
+                    Vector3Int adjacent = new(queuedCell.position.x + ix, queuedCell.position.y + iy);
+                    if (floodedCells.ContainsKey(adjacent)) continue;
+                    if (!IsValidCell(adjacent)) continue;
+                    queue.Enqueue(cells[adjacent]);
+                    floodedCells.Add(adjacent, cells[adjacent]);
+                }
             }
         }
         stopWatch.Stop();
         Debug.Log(stopWatch.ElapsedMilliseconds + "ms");
 
         floodedCells.Clear();
+        iterations = 0;
     }
     Cell RevealCellFlood(Cell cell)
     {
