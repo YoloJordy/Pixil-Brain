@@ -276,6 +276,7 @@ public class Minesweeper : Game
         }
     }
 
+    Stopwatch stopWatch = new();
     //what value you want updated
     Cell RevealCell(Cell cell)
     {
