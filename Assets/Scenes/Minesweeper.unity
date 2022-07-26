@@ -751,7 +751,8 @@ MonoBehaviour:
   game: {fileID: 1571008958}
   maxCameraSize: 20
   minCameraSize: 5
-  reSizeMultiplier: 0.5
+  borderWidth: 1
+  reSizeMultiplier: 0.001
 --- !u!1 &474357821
 GameObject:
   m_ObjectHideFlags: 0
@@ -1911,7 +1912,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Minimum width/height is 4, minimum bombs is 1.
+  m_text: Minimum width/height/bombs is 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2742,7 +2743,7 @@ MonoBehaviour:
   heightInput: {fileID: 1855687677}
   bombsInput: {fileID: 1907326630}
   warningLabel: {fileID: 630606067}
-  minBoardSize: 4
+  minBoardSize: 1
   maxBoardSize: 99
   minBombs: 1
 --- !u!1 &1528498273
@@ -2945,7 +2946,8 @@ MonoBehaviour:
   height: 16
   totalBombs: 40
   bombText: {fileID: 476155604}
-  totalExplodeTime: 2
+  totalExplodeTime: 1.5
+  floodDelta: 3000
 --- !u!156049354 &1571008959
 Grid:
   m_ObjectHideFlags: 0

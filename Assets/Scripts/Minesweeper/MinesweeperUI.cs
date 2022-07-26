@@ -25,7 +25,7 @@ public class MinesweeperUI : MonoBehaviour
     }
     private void Start()
     {
-        Minesweeper.current.EndGame += ShowEndScreen;
+        Game.EndGame += ShowEndScreen;
     }
 
     void ShowEndScreen(bool won)
@@ -40,6 +40,7 @@ public class MinesweeperUI : MonoBehaviour
         gameOverScreen.SetActive(false);
 
         startScreen.SetActive(true);
+        Minesweeper.current.board.tilemap.ClearAllTiles();
     }
 
     public event Action ClickedStart;

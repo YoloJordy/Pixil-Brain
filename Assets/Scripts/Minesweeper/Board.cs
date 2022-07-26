@@ -35,7 +35,7 @@ public class Board : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                Cell cell = (Cell)cells[new Vector3Int(x, y)];
+                Cell cell = cells[new Vector3Int(x, y)];
                 tilemap.SetTile(cell.position, GetTile(cell));
             }
         }

@@ -15,11 +15,11 @@ public abstract class Game : MonoBehaviour
         WIN,
     }
 
-    public event Action<bool> EndGame;
-    protected virtual void InvokeEndGame(bool won)
-    {
-        EndGame?.Invoke(won);
-    }
+    public static event Action<bool> EndGame;
+    protected static void InvokeEndGame(bool won) => EndGame?.Invoke(won);
+
+    public static event Action BeginGame;
+    protected static void InvokeBeginGame() => BeginGame?.Invoke();
 
     protected abstract void NewGame();
 

@@ -13,16 +13,12 @@ public class InputHandler : MonoBehaviour
     bool takingInput;
     public bool TakingInput
     {
-        get { return takingInput; }
-        set { takingInput = value; }
+        get => takingInput; 
+        set => takingInput = value;
     }
 
     float touchStart = 0f;
-    Vector2 touchLastPosition = Vector2.zero;
     InternalTouchPhase touchInternalPhase;
-
-    float multiTouchDist;
-    float prevMultiTouchDist;
 
     bool prevIsPointerOverGameObject;
 
@@ -42,72 +38,94 @@ public class InputHandler : MonoBehaviour
     private void Update()
     {
         if (!takingInput) return;
-        if (Input.touchCount >= 1) SingleTouchUpdate();
-        if (Input.touchCount == 2) MultiTouchUpdate();
+        if (Input.touchCount == 1) TouchUpdate();
     }
 
-    void SingleTouchUpdate()
+    void TouchUpdate()
     {
         var touch = Input.GetTouch(0);
+        var touchPosition = touch.position;
 
         switch (touch.phase)
         {
             case TouchPhase.Began:
                 touchInternalPhase = InternalTouchPhase.NEW;
                 touchStart = Time.time;
-                touchLastPosition = touch.position;
                 break;
 
             case TouchPhase.Stationary:
                 if (Time.time - touchStart >= minTimeHold && touchInternalPhase == InternalTouchPhase.NEW && !EventSystem.current.IsPointerOverGameObject(touch.fingerId))
                 {
-                    InvokeHeld(touch.position);
+                    InvokeHeld(touchPosition);
                     touchInternalPhase = InternalTouchPhase.HANDLED;
                 }
                 break;
 
             case TouchPhase.Moved:
-                InvokeDragged(Camera.main.ScreenToWorldPoint(touchLastPosition) - Camera.main.ScreenToWorldPoint(touch.position));
-
-                touchLastPosition = touch.position;
                 touchInternalPhase = InternalTouchPhase.MOVED;
                 break;
 
             case TouchPhase.Ended:
-                if (touchInternalPhase == InternalTouchPhase.NEW && !prevIsPointerOverGameObject) InvokeTapped(touch.position);
+                if (touchInternalPhase == InternalTouchPhase.NEW && !prevIsPointerOverGameObject) InvokeTapped(touchPosition);
 
                 touchInternalPhase = InternalTouchPhase.HANDLED;
                 break;
         }
+
         prevIsPointerOverGameObject = EventSystem.current.IsPointerOverGameObject(touch.fingerId);
     }
 
-    void MultiTouchUpdate()
+    private void LateUpdate()
+    {
+        if (!takingInput) return;
+        if (Input.touchCount >= 1) TouchLateUpdate();
+    }
+
+    void TouchLateUpdate()
+    {
+        var touch0 = Input.GetTouch(0);
+        var touchPosition = touch0.position;
+        var touchLastPosition = touch0.position - touch0.deltaPosition;
+
+        if (Input.touchCount == 2)
+        {
+            MultiTouchLateUpdate();
+
+            var touch1 = Input.GetTouch(1);
+            var touchCenterPosition = (touch0.position + touch1.position) / 2;
+            var touchCenterLastPosition = (touch0.position - touch0.deltaPosition + touch1.position - touch1.deltaPosition) / 2;
+
+            InvokeDragged(Camera.main.ScreenToWorldPoint(touchCenterLastPosition) - Camera.main.ScreenToWorldPoint(touchCenterPosition));
+        }
+        else InvokeDragged(Camera.main.ScreenToWorldPoint(touchLastPosition) - Camera.main.ScreenToWorldPoint(touchPosition));
+    }
+
+    void MultiTouchLateUpdate()
     {
         var touches = Input.touches;
+        var touch0 = touches[0];
+        var touch1 = touches[1];
 
-        foreach (Touch touch in touches)
+        var prevPos1 = touch0.position - touch0.deltaPosition;
+        var prevPos2 = touch1.position - touch1.deltaPosition;
+        var prevDist = (prevPos1 - prevPos2).magnitude;
+
+        var dist = (touch0.position - touch1.position).magnitude;
+
+        var delta = prevDist - dist;
+        InvokePinched(delta);
+
+        if (touch1.phase == TouchPhase.Ended || touch0.phase == TouchPhase.Ended)
         {
-            switch (touch.phase)
-            {
-                case TouchPhase.Began:
-                    multiTouchDist = DistScreenToWorld(touches[0].position, touches[1].position);
-                    prevMultiTouchDist = multiTouchDist;
-                    break;
-
-                case TouchPhase.Moved:
-                    var delta = prevMultiTouchDist - multiTouchDist;
-                    if (delta > -5 && delta < 5) InvokePinched(delta);
-
-                    prevMultiTouchDist = multiTouchDist;
-                    DistScreenToWorld(touches[0].position, touches[1].position);
-                    break;
-            }
+            FlipTakingInput();
+            Invoke(nameof(FlipTakingInput), 0.05f);
         }
     }
-    float DistScreenToWorld(Vector2 screenPosition1, Vector2 screenPosition2)
+
+    void FlipTakingInput()
     {
-        return multiTouchDist = (Camera.main.ScreenToWorldPoint(screenPosition1) - Camera.main.ScreenToWorldPoint(screenPosition2)).magnitude;
+        TakingInput = !TakingInput;
+        touchStart = Time.time;
     }
 
     public event Action<Vector3> Tapped;
@@ -117,8 +135,16 @@ public class InputHandler : MonoBehaviour
     public void InvokeHeld(Vector3 position) => Held?.Invoke(position);
 
     public event Action<Vector2> Dragged;
-    public void InvokeDragged(Vector2 positionDelta) => Dragged?.Invoke(positionDelta);
+    public void InvokeDragged(Vector2 positionDelta)
+    {
+        CameraController.current.Move(positionDelta);
+        Dragged?.Invoke(positionDelta);
+    }
 
     public event Action<float> Pinched;
-    public void InvokePinched(float amount) => Pinched?.Invoke(amount);
+    public void InvokePinched(float amount) 
+    {
+        CameraController.current.Resize(amount);
+        Pinched?.Invoke(amount); 
+    }
 }

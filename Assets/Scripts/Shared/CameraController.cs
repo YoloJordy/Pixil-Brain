@@ -1,23 +1,26 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    public static CameraController current;
+
     [SerializeField] Game game;
     [SerializeField] float maxCameraSize = 20;
     [SerializeField] float minCameraSize = 5;
-    [SerializeField] float reSizeMultiplier = 0.1f;
+    [SerializeField] float borderWidth = 1;
+    [SerializeField] float reSizeMultiplier = 0.01f;
 
     [System.NonSerialized] public float startSize;
 
     void Start()
     {
-        InputHandler.current.Dragged += Move;
-        InputHandler.current.Pinched += ReSize;
+        if (current == null) current = this;
+
+        Game.BeginGame += ResetCamera;
+        Game.EndGame += ResetCamera;
     }
 
-    void Move(Vector2 delta)
+    public void Move(Vector2 delta)
     {
         transform.Translate(delta, Space.World);
 
@@ -34,10 +37,24 @@ public class CameraController : MonoBehaviour
             boardOrigin.y > camera.transform.position.y) transform.Translate(new Vector2(0, -delta.y), Space.World);
     }
 
-    void ReSize(float amount)
+    void ResetCamera()
+    {
+        if (game == null) return;
+
+        var width = game.size.x * Screen.height / Screen.width / 2;
+        var height = game.size.y / 2;
+        var newSize = (width > height ? width : height) +1;
+
+        maxCameraSize = newSize;
+        Camera.main.orthographicSize = newSize;
+        Camera.main.transform.position = new Vector3(game.size.x / 2, game.size.y / 2, Camera.main.transform.position.z);
+    }
+    void ResetCamera(bool unused) => ResetCamera();
+
+    public void Resize(float amount)
     {
         var size = Camera.main.orthographicSize;
-        size += amount * reSizeMultiplier;
+        size += amount * reSizeMultiplier * size;
 
         if (size > maxCameraSize) Camera.main.orthographicSize = maxCameraSize;
         else if (size < minCameraSize) Camera.main.orthographicSize = minCameraSize;
