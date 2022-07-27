@@ -17,9 +17,8 @@ public class Minesweeper : Game
     [SerializeField] int totalBombs = 40;
     [SerializeField] TMP_Text bombText;
     [SerializeField] float totalExplodeTime = 2;
-    [SerializeField] float floodDelta = 3000;
+    [SerializeField] float floodTimeBeforeYield = 50;
 
-    int iterations = 0;
     bool floodingTiles = false;
 
     int bombs;
@@ -325,7 +324,7 @@ public class Minesweeper : Game
                     if (!IsValidCell(adjacent)) continue;
                     queue.Enqueue(cells[adjacent]);
                     floodedCells.Add(adjacent, cells[adjacent]);
-                    if (floodedCells.Count % floodDelta == 0)
+                    if (stopwatch.ElapsedMilliseconds % floodTimeBeforeYield == 0 && stopwatch.ElapsedMilliseconds != 0)
                     {
                         Debug.Log("Yielding");
                         yield return null;
@@ -400,6 +399,9 @@ public class Minesweeper : Game
 
         var waitTime = totalExplodeTime / totalBombs;
 
+        Stopwatch stopwatch = new();
+        stopwatch.Start();
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -411,11 +413,13 @@ public class Minesweeper : Game
                 if (cell.type == Cell.Type.BOMB)
                 {
                     SetCell(RevealCell, cell.position);
-                    if (Time.deltaTime > waitTime) yield return null; 
-                    else yield return new WaitForSeconds(waitTime);
+                    if (waitTime > stopwatch.ElapsedMilliseconds / 1000) yield return new WaitForSeconds(waitTime - (stopwatch.ElapsedMilliseconds / 1000));
+                    else continue;
+                    stopwatch.Restart();
                 }
             }
         }
+        stopwatch.Stop();
         InvokeEndGame(false);
     }
 }
