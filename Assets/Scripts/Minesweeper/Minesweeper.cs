@@ -320,8 +320,7 @@ public class Minesweeper : Game
                     if (ix == 0 && iy == 0) continue;
 
                     Vector3Int adjacent = new(queuedCell.position.x + ix, queuedCell.position.y + iy);
-                    if (floodedCells.ContainsKey(adjacent)) continue;
-                    if (!IsValidCell(adjacent)) continue;
+                    if (floodedCells.ContainsKey(adjacent) || !IsValidCell(adjacent) || cells[adjacent].revealed) continue;
                     queue.Enqueue(cells[adjacent]);
                     floodedCells.Add(adjacent, cells[adjacent]);
                     if (stopwatch.ElapsedMilliseconds % floodTimeBeforeYield == 0 && stopwatch.ElapsedMilliseconds != 0)
