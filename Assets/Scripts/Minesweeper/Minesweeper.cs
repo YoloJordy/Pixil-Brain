@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -35,8 +34,7 @@ public class Minesweeper : Game
 
     static bool isFlagInput = false;
 
-    Dictionary<Vector3Int, Cell> cells = new();
-    Dictionary<Vector3Int, Cell> startingCells = new();
+    Dictionary<Vector3Int, Cell> startingCells;
 
     public static void SwitchToInput(bool newIsFlagInput)
     {
@@ -58,9 +56,18 @@ public class Minesweeper : Game
 
     private void Start()
     {
+        cells = new();
+        startingCells = new();
+
+        if (GameDatabase.GameHasSave(gameName))
+        {
+            LoadGame();
+        }
+
         InputHandler.current.Tapped += InputTapped;
         InputHandler.current.Held += InputHeld;
         MinesweeperUI.current.ClickedStart += NewGame;
+        EndGame += RemoveData;
     }
 
     protected override void NewGame()
@@ -86,6 +93,32 @@ public class Minesweeper : Game
         GenerateBombs(startCellPosition);
         GenerateNumbers();
 
+        board.DrawBoard(cells, new Vector2Int(width, height));
+
+        state = State.PLAYING;
+    }
+    void LoadGame()
+    {
+        SaveData data = GameDatabase.LoadData(gameName);
+
+        Bombs = 0;
+        totalBombs = 0;
+        unRevealedCells = 0;
+
+        foreach(var cell in data.cells)
+        {
+            cells[cell.position] = cell;
+
+            if (cell.type != Cell.Type.BOMB) { if (!cell.revealed) unRevealedCells++; continue; }
+            totalBombs++;
+            if (cell.flagged) continue;
+            Bombs++;
+        }
+
+        size = new Vector2(width * board.tilemap.cellSize.x, height * board.tilemap.cellSize.y);
+        InputHandler.current.TakingInput = true;
+        InvokeBeginGame();
+        MinesweeperUI.current.ShowGameUI();
         board.DrawBoard(cells, new Vector2Int(width, height));
 
         state = State.PLAYING;
@@ -241,6 +274,7 @@ public class Minesweeper : Game
     //update the values of a cells
     void SetCell(Func<Cell, Cell> changeFunc, Vector3Int cellPosition)
     {
+        Debug.Log(unRevealedCells);
         if (!IsValidCell(cellPosition)) return;
 
         var cell = cells[cellPosition];

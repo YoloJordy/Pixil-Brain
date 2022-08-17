@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct Cell
+[System.Serializable]
+public class Cell
 {
     public enum Type
     {
