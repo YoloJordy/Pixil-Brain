@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Game : MonoBehaviour
 {
     [NonSerialized] public Vector2 size;
     [NonSerialized] public Board board;
+    [NonSerialized] public Dictionary<Vector3Int, Cell> cells;
+    public string gameName;
     protected State state = State.GAMEOVER;
 
     protected enum State
@@ -27,4 +30,10 @@ public abstract class Game : MonoBehaviour
 
     protected abstract void InputHeld(Vector3 position);
 
+    protected void RemoveData(bool _) => GameDatabase.RemoveData(gameName);
+
+    private void OnApplicationQuit()
+    {
+        if (state == State.PLAYING) GameDatabase.SaveDataAsync(this);
+    }
 }

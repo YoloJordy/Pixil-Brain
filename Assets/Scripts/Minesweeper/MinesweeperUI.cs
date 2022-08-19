@@ -5,9 +5,12 @@ using UnityEngine.UI;
 
 public class MinesweeperUI : MonoBehaviour
 {
+    public static MinesweeperUI current;
+
     [SerializeField] GameObject gameOverScreen;
     [SerializeField] GameObject winScreen;
     [SerializeField] GameObject startScreen;
+    [SerializeField] GameObject sideButtons;
 
     [SerializeField] InputField widthInput;
     [SerializeField] InputField heightInput;
@@ -21,8 +24,6 @@ public class MinesweeperUI : MonoBehaviour
     [SerializeField] int minBombs = 1;
 
     int frameCounter;
-
-    public static MinesweeperUI current;
 
     private void Awake()
     {
@@ -45,6 +46,7 @@ public class MinesweeperUI : MonoBehaviour
     {
         if (won) winScreen.SetActive(true);
         else gameOverScreen.SetActive(true);
+        sideButtons.SetActive(false);
     }
 
     public void ClickRestart()
@@ -61,9 +63,17 @@ public class MinesweeperUI : MonoBehaviour
     {
         Minesweeper.current.SetGameValues(widthInput.text, heightInput.text, bombsInput.text);
 
-        startScreen.SetActive(false);
-        warningLabel.SetActive(false);
+        ShowGameUI();
         ClickedStart?.Invoke();
+    }
+
+    public void ShowGameUI()
+    {
+        startScreen.SetActive(false);
+        winScreen.SetActive(false);
+        gameOverScreen.SetActive(false);
+        sideButtons.SetActive(true);
+        warningLabel.SetActive(false);
     }
 
     public void CheckInput()
