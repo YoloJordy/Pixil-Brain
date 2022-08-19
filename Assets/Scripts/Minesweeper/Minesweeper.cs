@@ -104,16 +104,24 @@ public class Minesweeper : Game
         Bombs = 0;
         totalBombs = 0;
         unRevealedCells = 0;
+        width = 0;
+        height = 0;
 
         foreach(var cell in data.cells)
         {
             cells[cell.position] = cell;
+
+            if (cell.position.x > width) width = cell.position.x;
+            if (cell.position.y > height) height = cell.position.y;
 
             if (cell.type != Cell.Type.BOMB) { if (!cell.revealed) unRevealedCells++; continue; }
             totalBombs++;
             if (cell.flagged) continue;
             Bombs++;
         }
+
+        width++;
+        height++;
 
         size = new Vector2(width * board.tilemap.cellSize.x, height * board.tilemap.cellSize.y);
         InputHandler.current.TakingInput = true;
@@ -274,7 +282,6 @@ public class Minesweeper : Game
     //update the values of a cells
     void SetCell(Func<Cell, Cell> changeFunc, Vector3Int cellPosition)
     {
-        Debug.Log(unRevealedCells);
         if (!IsValidCell(cellPosition)) return;
 
         var cell = cells[cellPosition];

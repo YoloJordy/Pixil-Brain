@@ -2944,6 +2944,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 933bc8a62e81f0a41b86ed8b486c3af4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gameName: Minesweeper
   width: 16
   height: 16
   totalBombs: 40

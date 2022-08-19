@@ -9,7 +9,6 @@ public static class GameDatabase
     {
         SaveData saveData = new(game);
         string json = JsonUtility.ToJson(saveData);
-        Debug.Log(json);
         File.WriteAllTextAsync(Application.dataPath + "/StreamingAssets/" + game.gameName + ".json", json);
     }
 
