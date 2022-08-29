@@ -9,26 +9,33 @@ using Random = UnityEngine.Random;
 
 public class Minesweeper : Game
 {
-    [SerializeField] int width = 16;
-    [SerializeField] int height = 16;
+    public int width = 16;
+    public int height = 16;
     public static Minesweeper current;
 
-    [SerializeField] int totalBombs = 40;
-    [SerializeField] TMP_Text bombText;
+    public int totalBombs = 40;
     [SerializeField] float totalExplodeTime = 2;
+    [SerializeField] float totalFlagTime = 0.5f;
     [SerializeField] float floodTimeBeforeYield = 50;
 
     bool floodingTiles = false;
 
     int bombs;
     int unRevealedCells;
-    int Bombs
+    public int UnRevealedCells
+    {
+        get { return unRevealedCells; }
+        private set 
+        {
+            unRevealedCells = value;
+        }
+    }
+    public int Bombs
     {
         get { return bombs; }
-        set
+        private set
         {
             bombs = value;
-            if (bombText != null) bombText.text = bombs.ToString();
         }
     }
 
@@ -99,29 +106,16 @@ public class Minesweeper : Game
     }
     void LoadGame()
     {
-        SaveData data = GameDatabase.LoadData(gameName);
+        Debug.Log("Loading save");
+        var data = GameDatabase.LoadMinesweeperData(gameName);
 
-        Bombs = 0;
-        totalBombs = 0;
-        unRevealedCells = 0;
-        width = 0;
-        height = 0;
+        Bombs = data.currentBombs;
+        totalBombs = data.totalBombs;
+        UnRevealedCells = data.unRevealedCells;
+        width = data.width;
+        height = data.height;
 
-        foreach(var cell in data.cells)
-        {
-            cells[cell.position] = cell;
-
-            if (cell.position.x > width) width = cell.position.x;
-            if (cell.position.y > height) height = cell.position.y;
-
-            if (cell.type != Cell.Type.BOMB) { if (!cell.revealed) unRevealedCells++; continue; }
-            totalBombs++;
-            if (cell.flagged) continue;
-            Bombs++;
-        }
-
-        width++;
-        height++;
+        foreach(var cell in data.cells) cells[cell.position] = cell;
 
         size = new Vector2(width * board.tilemap.cellSize.x, height * board.tilemap.cellSize.y);
         InputHandler.current.TakingInput = true;
@@ -149,7 +143,7 @@ public class Minesweeper : Game
                 else cells.Add(cell.position, cell);
             }
         }
-        unRevealedCells = (width * height) - Bombs;
+        UnRevealedCells = (width * height) - Bombs;
     }
 
     //set some cells to bombs
@@ -185,22 +179,17 @@ public class Minesweeper : Game
 
         for (int i = 0; i < totalBombs; i++)
         {
-            SetRandomBombCell(startCellPosition);
+            SetRandomBombCell();
         }
         Bombs = totalBombs;
     }
 
     //sets a random empty cell to a bomb
-    void SetRandomBombCell(Vector3Int startCellPosition)
+    void SetRandomBombCell()
     {
         var cell = cells[new Vector3Int(Random.Range(0, width), Random.Range(0, height))];
-
-        if (cell.position == startCellPosition) { SetRandomBombCell(startCellPosition); return; }
-
-        foreach (var pair in startingCells) if (cell.position == pair.Value.position) { SetRandomBombCell(startCellPosition); return; }
-
-        if (cell.type == Cell.Type.NUMBER && cell.position != startCellPosition) SetCell(BombCell, cell.position);
-        else SetRandomBombCell(startCellPosition);
+        if (cell.type == Cell.Type.NUMBER && !startingCells.ContainsKey(cell.position)) SetCell(BombCell, cell.position);
+        else SetRandomBombCell();
     }
 
     void GenerateNumbers()
@@ -233,6 +222,18 @@ public class Minesweeper : Game
         return count;
     }
 
+    void RemoveBombsAtStart()
+    {      
+        foreach(var pair in startingCells) 
+        { 
+            if (pair.Value.type == Cell.Type.BOMB)
+            {
+                SetCell(NumberCell, pair.Key);
+                SetRandomBombCell();
+            }
+        }
+    }
+
     Dictionary<Vector3Int, Cell> AdjacentCells(Vector3Int cellPosition)
     {
         Dictionary<Vector3Int, Cell> adjacentCells = new();
@@ -257,13 +258,11 @@ public class Minesweeper : Game
         var cellPosition = GetClickedCellPosition(position);
         if (!IsValidCell(cellPosition)) return;
 
+        var cell = cells[cellPosition];
+        if (cell.revealed) StartCoroutine(ClickRevealedCell(cellPosition));
         if (!isFlagInput)
         {
-            var cell = cells[cellPosition];
-
             if (state == State.START) StartGame(cellPosition);
-            if (cell.revealed) StartCoroutine(ClickRevealedCell(cellPosition));
-
             SetCell(RevealCell, cellPosition);
         }
         else SetCell(FlagCell, GetClickedCellPosition(position));
@@ -290,7 +289,7 @@ public class Minesweeper : Game
 
         board.tilemap.SetTile(cellPosition, board.GetTile(cell));
         cells[cellPosition] = cell;
-        if (unRevealedCells == 0) CheckWin();
+        if (UnRevealedCells == 0 && state == State.PLAYING) CheckWin();
     }
 
     //when the cell you clicked has been revealed
@@ -333,7 +332,7 @@ public class Minesweeper : Game
             StartCoroutine(Flood(cell));
         }
         
-        if(!cell.revealed) unRevealedCells--;
+        if(!cell.revealed) UnRevealedCells--;
         cell.revealed = true;
         return cell;
     }
@@ -366,26 +365,25 @@ public class Minesweeper : Game
                     floodedCells.Add(adjacent, cells[adjacent]);
                     if (stopwatch.ElapsedMilliseconds % floodTimeBeforeYield == 0 && stopwatch.ElapsedMilliseconds != 0)
                     {
-                        Debug.Log("Yielding");
                         yield return null;
                     }
                 }
             }
         }
         stopwatch.Stop();
-        Debug.Log("Elapsed Time: " + stopwatch.ElapsedMilliseconds);
         floodedCells.Clear();
         floodingTiles = false;
     }
     Cell RevealCellFlood(Cell cell)
     {
-        unRevealedCells--;
+        UnRevealedCells--;
         cell.revealed = true;
 
         return cell;
     }
     Cell FlagCell(Cell cell)
     {
+        if (cell.revealed) return cell;
         if (cell.flagged) Bombs++; else Bombs--;
         cell.flagged = !cell.flagged;
 
@@ -408,18 +406,48 @@ public class Minesweeper : Game
 
     void CheckWin()
     {
-        unRevealedCells = 0;
-        foreach (var pair in cells) if (!pair.Value.revealed && pair.Value.type == Cell.Type.NUMBER) unRevealedCells++;
-
-        if (unRevealedCells == 0) Invoke(nameof(Win), 0.3f);
+        Debug.Log("checking win");
+        Debug.Log(UnRevealedCells);
+        if (UnRevealedCells == 0) Invoke(nameof(Win), 0.3f);
     }
 
     void Win()
     {
         state = State.WIN;
-        Camera.main.transform.position = new Vector3(width / 2, height / 2, Camera.main.transform.position.z);
+        CameraController.current.ResetCameraAsync();
         InputHandler.current.TakingInput = false;
 
+        StartCoroutine(FlagAll());
+    }
+
+    IEnumerator FlagAll()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        var waitTime = totalFlagTime / totalBombs;
+
+        Stopwatch stopwatch = new();
+        stopwatch.Start();
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                var key = new Vector3Int(x, y);
+                if (!cells.ContainsKey(key)) continue;
+                var cell = cells[key];
+
+                if (cell.type == Cell.Type.BOMB && !cell.flagged)
+                {
+                    SetCell(FlagCell, cell.position);
+                    if (waitTime > stopwatch.ElapsedMilliseconds / 1000) yield return new WaitForSeconds(waitTime - (stopwatch.ElapsedMilliseconds / 1000));
+                    else continue;
+                    stopwatch.Restart();
+                }
+            }
+        }
+        stopwatch.Stop();
+        yield return new WaitForSeconds(0.3f);
         InvokeEndGame(true);
     }
 
@@ -427,7 +455,7 @@ public class Minesweeper : Game
     {
         state = State.GAMEOVER;
         SetCell(RevealCell, cellPosition);
-        Camera.main.transform.position = new Vector3(width / 2, height / 2, Camera.main.transform.position.z);
+        CameraController.current.ResetCameraAsync();
         InputHandler.current.TakingInput = false;
 
         StartCoroutine(ExplodeAll());

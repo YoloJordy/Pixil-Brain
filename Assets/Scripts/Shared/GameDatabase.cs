@@ -5,29 +5,29 @@ using UnityEngine;
 
 public static class GameDatabase
 {
+    public static string saveDirectory = Path.Combine(Application.persistentDataPath, "Saves");
     public static void SaveDataAsync(Game game)
     {
-        SaveData saveData = new(game);
-        string json = JsonUtility.ToJson(saveData);
-        File.WriteAllTextAsync(Application.dataPath + "/StreamingAssets/" + game.gameName + ".json", json);
+        SaveData saveData = game.gameName switch
+        {
+            "Minesweeper" => new MinesweeperSaveData(game),
+            _ => new SaveData(game),
+        };
+
+        var json = JsonUtility.ToJson(saveData);
+        Debug.Log(saveDirectory);
+        if (!Directory.Exists(saveDirectory)) Directory.CreateDirectory(saveDirectory);
+        File.WriteAllTextAsync(Path.Combine(saveDirectory, game.gameName + ".json"), json);
     }
 
-    public static SaveData LoadData(string gameName)
+    public static MinesweeperSaveData LoadMinesweeperData(string gameName)
     {
-        string json = File.ReadAllText(Application.dataPath + "/StreamingAssets/" + gameName + ".json");
-        SaveData saveData = JsonUtility.FromJson<SaveData>(json);
-
+        var json = File.ReadAllText(Path.Combine(saveDirectory, gameName + ".json"));
+        var saveData = JsonUtility.FromJson<MinesweeperSaveData>(json);
         return saveData;
     }
 
-    public static void RemoveData(string gameName)
-    {
-        Debug.Log("removing Data");
-        File.Delete(Application.dataPath + "/StreamingAssets/" + gameName + ".json");
-    }
+    public static void RemoveData(string gameName) => File.Delete(Path.Combine(saveDirectory, gameName + ".json"));
 
-    public static bool GameHasSave(string gameName)
-    {
-        return File.Exists(Application.dataPath + "/StreamingAssets/" + gameName + ".json");
-    }
+    public static bool GameHasSave(string gameName) => File.Exists(Path.Combine(saveDirectory, gameName + ".json"));
 }

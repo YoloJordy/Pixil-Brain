@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -9,6 +10,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] float minCameraSize = 5;
     [SerializeField] float borderWidth = 1;
     [SerializeField] float reSizeMultiplier = 0.01f;
+    [SerializeField] float lerpTime = 2;
 
     [System.NonSerialized] public float startSize;
 
@@ -16,8 +18,8 @@ public class CameraController : MonoBehaviour
     {
         if (current == null) current = this;
 
-        Game.BeginGame += ResetCamera;
-        Game.EndGame += ResetCamera;
+        Game.BeginGame += ResetCameraAsync;
+        Game.EndGame += ResetCameraAsync;
     }
 
     public void Move(Vector2 delta)
@@ -37,19 +39,31 @@ public class CameraController : MonoBehaviour
             boardOrigin.y > camera.transform.position.y) transform.Translate(new Vector2(0, -delta.y), Space.World);
     }
 
-    void ResetCamera()
+    public async void ResetCameraAsync()
     {
         if (game == null) return;
 
-        var width = game.size.x * Screen.height / Screen.width / 2;
-        var height = game.size.y / 2;
-        var newSize = (width > height ? width : height) +1;
+        var newSize = ReCalculateMaxSize();
 
-        maxCameraSize = newSize;
-        Camera.main.orthographicSize = newSize;
         Camera.main.transform.position = new Vector3(game.size.x / 2, game.size.y / 2, Camera.main.transform.position.z);
+        await LerpCameraSizeAsync();
     }
-    void ResetCamera(bool unused) => ResetCamera();
+    void ResetCameraAsync(bool unused) => ResetCameraAsync();
+
+    async Task LerpCameraSizeAsync()
+    {
+        float timeElapsed = 0;
+        float lerpDuration = lerpTime;
+        float startValue = Camera.main.orthographicSize;
+        float endValue = maxCameraSize;
+
+        while (timeElapsed < lerpDuration)
+        {
+            Camera.main.orthographicSize = Mathf.Lerp(startValue, endValue, timeElapsed / lerpDuration);
+            timeElapsed += Time.deltaTime;
+            await Task.Yield();
+        }
+    }
 
     public void Resize(float amount)
     {
@@ -59,5 +73,15 @@ public class CameraController : MonoBehaviour
         if (size > maxCameraSize) Camera.main.orthographicSize = maxCameraSize;
         else if (size < minCameraSize) Camera.main.orthographicSize = minCameraSize;
         else Camera.main.orthographicSize = size;
+    }
+
+    public float ReCalculateMaxSize()
+    {
+        var width = game.size.x * Screen.height / Screen.width / 2;
+        var height = game.size.y / 2;
+        var newSize = (width > height ? width : height) + borderWidth;
+
+        maxCameraSize = newSize;
+        return newSize;
     }
 }
