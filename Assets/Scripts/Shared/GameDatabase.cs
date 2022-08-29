@@ -24,19 +24,10 @@ public static class GameDatabase
     {
         var json = File.ReadAllText(Path.Combine(saveDirectory, gameName + ".json"));
         var saveData = JsonUtility.FromJson<MinesweeperSaveData>(json);
-        Debug.Log(json);
         return saveData;
     }
 
-    public static void RemoveData(string gameName)
-    {
-        Debug.Log("removing Data");
-        File.Delete(Path.Combine(saveDirectory, gameName + ".json"));
-    }
+    public static void RemoveData(string gameName) => File.Delete(Path.Combine(saveDirectory, gameName + ".json"));
 
-    public static bool GameHasSave(string gameName)
-    {
-        Debug.Log(File.Exists(Path.Combine(saveDirectory, gameName + ".json")));
-        return File.Exists(Path.Combine(saveDirectory, gameName + ".json"));
-    }
+    public static bool GameHasSave(string gameName) => File.Exists(Path.Combine(saveDirectory, gameName + ".json"));
 }

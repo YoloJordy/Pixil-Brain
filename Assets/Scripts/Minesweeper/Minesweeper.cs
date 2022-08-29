@@ -188,7 +188,7 @@ public class Minesweeper : Game
     void SetRandomBombCell()
     {
         var cell = cells[new Vector3Int(Random.Range(0, width), Random.Range(0, height))];
-        if ((cell.type == Cell.Type.NUMBER && !startingCells.ContainsKey(cell.position)) || ((width * height) - startingCells.Count >= totalBombs)) SetCell(BombCell, cell.position);
+        if (cell.type == Cell.Type.NUMBER && !startingCells.ContainsKey(cell.position)) SetCell(BombCell, cell.position);
         else SetRandomBombCell();
     }
 
@@ -224,7 +224,8 @@ public class Minesweeper : Game
 
     void RemoveBombsAtStart()
     {      
-        foreach(var pair in startingCells)
+        foreach(var pair in startingCells) 
+        { 
             if (pair.Value.type == Cell.Type.BOMB)
             {
                 SetCell(NumberCell, pair.Key);
@@ -257,13 +258,11 @@ public class Minesweeper : Game
         var cellPosition = GetClickedCellPosition(position);
         if (!IsValidCell(cellPosition)) return;
 
+        var cell = cells[cellPosition];
+        if (cell.revealed) StartCoroutine(ClickRevealedCell(cellPosition));
         if (!isFlagInput)
         {
-            var cell = cells[cellPosition];
-
             if (state == State.START) StartGame(cellPosition);
-            if (cell.revealed) StartCoroutine(ClickRevealedCell(cellPosition));
-
             SetCell(RevealCell, cellPosition);
         }
         else SetCell(FlagCell, GetClickedCellPosition(position));
@@ -384,6 +383,7 @@ public class Minesweeper : Game
     }
     Cell FlagCell(Cell cell)
     {
+        if (cell.revealed) return cell;
         if (cell.flagged) Bombs++; else Bombs--;
         cell.flagged = !cell.flagged;
 
@@ -439,7 +439,6 @@ public class Minesweeper : Game
 
                 if (cell.type == Cell.Type.BOMB && !cell.flagged)
                 {
-                    Debug.Log("Hi");
                     SetCell(FlagCell, cell.position);
                     if (waitTime > stopwatch.ElapsedMilliseconds / 1000) yield return new WaitForSeconds(waitTime - (stopwatch.ElapsedMilliseconds / 1000));
                     else continue;
@@ -448,6 +447,7 @@ public class Minesweeper : Game
             }
         }
         stopwatch.Stop();
+        yield return new WaitForSeconds(0.3f);
         InvokeEndGame(true);
     }
 
