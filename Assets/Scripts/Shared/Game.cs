@@ -32,7 +32,14 @@ public abstract class Game : MonoBehaviour
 
     protected void RemoveData(bool _) => GameDatabase.RemoveData(gameName);
 
-    private void OnApplicationQuit()
+    private void OnApplicationFocus(bool focus)
+    {
+        if (focus) return;
+
+        StopAllCoroutines();
+        if (state == State.PLAYING) GameDatabase.SaveDataAsync(this); 
+    }
+    private void OnDestroy()
     {
         if (state == State.PLAYING) GameDatabase.SaveDataAsync(this);
     }

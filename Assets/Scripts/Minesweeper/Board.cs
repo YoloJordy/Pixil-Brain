@@ -72,7 +72,6 @@ public class Board : MonoBehaviour
         foreach(string filename in fileNames)
         {
             tiles.Add(filename, Resources.Load<Tile>(resourcesPath + "/" + filename));
-            Debug.Log(tiles[filename].sprite);
         }
     }
 }
