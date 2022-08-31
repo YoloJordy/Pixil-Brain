@@ -1,29 +1,13 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 
-public class MinesweeperUI : MonoBehaviour
+public class MinesweeperUI : BaseUI
 {
     public static MinesweeperUI current;
 
-    [SerializeField] MinesweeperCanvas portraitCanvas;
-    [SerializeField] MinesweeperCanvas landscapeCanvas;
-
-    MinesweeperCanvas Canvas
-    {
-        get 
-        {
-            var isLandscape = Screen.orientation == ScreenOrientation.LandscapeLeft || Screen.orientation == ScreenOrientation.LandscapeRight;
-            return isLandscape ? landscapeCanvas : portraitCanvas; 
-        }
-        set 
-        { 
-            portraitCanvas = value; 
-            landscapeCanvas = value;
-        }
-    }
-
-    ScreenOrientation prevOrientation;
+    [SerializeField] MinesweeperCanvas canvas;
 
     [SerializeField] int minBoardSize = 4;
     [SerializeField] int maxBoardSize = 99;
@@ -50,46 +34,38 @@ public class MinesweeperUI : MonoBehaviour
     private void Start()
     {
         Game.EndGame += ShowEndScreen;
-        SwapOrientation();
     }
 
     private void Update()
     {
-        if (prevOrientation != Screen.orientation)
-        {
-            SwapOrientation();
-            SyncCanvasData();
-        }
-
         if (++frameCounter % 100 == 0)
         {
-            Canvas.fpsCounter.text = ((int)(1 / Time.deltaTime)).ToString();
+            canvas.fpsCounter.text = ((int)(1 / Time.deltaTime)).ToString();
         }
-        if (Canvas.bombCounter != null) Canvas.bombCounter.text = Minesweeper.current.Bombs.ToString();
+        if (canvas.bombCounter != null) canvas.bombCounter.text = Minesweeper.current.Bombs.ToString();
     }
-
     void ShowEndScreen(bool won)
     {
-        if (won) Canvas.winScreen.SetActive(true);
-        else Canvas.gameOverScreen.SetActive(true);
+        if (won) canvas.winScreen.SetActive(true);
+        else canvas.gameOverScreen.SetActive(true);
 
-        Canvas.bombCounter.enabled = false;
-        Canvas.sideButtons.gameObject.SetActive(false);
+        canvas.bombCounter.enabled = false;
+        canvas.sideButtons.gameObject.SetActive(false);
     }
 
     public void ClickRestart()
     {
-        Canvas.winScreen.SetActive(false);
-        Canvas.gameOverScreen.SetActive(false);
+        canvas.winScreen.SetActive(false);
+        canvas.gameOverScreen.SetActive(false);
 
-        Canvas.startScreen.SetActive(true);
+        canvas.startScreen.SetActive(true);
         Minesweeper.current.board.tilemap.ClearAllTiles();
     }
 
     public event Action ClickedStart;
     public void ClickStart()
     {
-        Minesweeper.current.SetGameValues(Canvas.widthInput.text, Canvas.heightInput.text, Canvas.bombsInput.text);
+        Minesweeper.current.SetGameValues(canvas.widthInput.text, canvas.heightInput.text, canvas.bombsInput.text);
 
         ShowGameUI();
         ClickedStart?.Invoke();
@@ -97,19 +73,19 @@ public class MinesweeperUI : MonoBehaviour
 
     public void ShowGameUI()
     {
-        Canvas.startScreen.SetActive(false);
-        Canvas.winScreen.SetActive(false);
-        Canvas.gameOverScreen.SetActive(false);
-        Canvas.sideButtons.gameObject.SetActive(true);
-        Canvas.bombCounter.enabled = true;
-        Canvas.warningLabel.SetActive(false);
+        canvas.startScreen.SetActive(false);
+        canvas.winScreen.SetActive(false);
+        canvas.gameOverScreen.SetActive(false);
+        canvas.sideButtons.gameObject.SetActive(true);
+        canvas.bombCounter.enabled = true;
+        canvas.warningLabel.SetActive(false);
     }
 
     public void CheckInput()
     {
-        int.TryParse(Canvas.widthInput.text, out var width);
-        int.TryParse(Canvas.heightInput.text, out var height);
-        int.TryParse(Canvas.bombsInput.text, out var bombs);
+        int.TryParse(canvas.widthInput.text, out var width);
+        int.TryParse(canvas.heightInput.text, out var height);
+        int.TryParse(canvas.bombsInput.text, out var bombs);
 
         if (width < minBoardSize || width > maxBoardSize || height < minBoardSize || height > maxBoardSize || bombs < minBombs) ShowSizeWarning();
         else ClickStart();
@@ -119,92 +95,34 @@ public class MinesweeperUI : MonoBehaviour
     {
         if (!toggleOn) return;
 
-        var difficulty = Canvas.gameDifficultyGroup.GetFirstActiveToggle().name;
+        var difficulty = canvas.gameDifficultyGroup.ActiveToggles().FirstOrDefault().name;
         switch (difficulty)
         {
             case "Easy":
-                Canvas.widthInput.text = easyWidth.ToString();
-                Canvas.heightInput.text = easyHeight.ToString();
-                Canvas.bombsInput.text = easyBombs.ToString();
+                canvas.widthInput.text = easyWidth.ToString();
+                canvas.heightInput.text = easyHeight.ToString();
+                canvas.bombsInput.text = easyBombs.ToString();
                 break;
             case "Medium":
-                Canvas.widthInput.text = mediumWidth.ToString();
-                Canvas.heightInput.text = mediumHeight.ToString();
-                Canvas.bombsInput.text = mediumBombs.ToString();
+                canvas.widthInput.text = mediumWidth.ToString();
+                canvas.heightInput.text = mediumHeight.ToString();
+                canvas.bombsInput.text = mediumBombs.ToString();
                 break;
             case "Hard":
-                Canvas.widthInput.text = hardWidth.ToString();
-                Canvas.heightInput.text = hardHeight.ToString();
-                Canvas.bombsInput.text = hardBombs.ToString();
+                canvas.widthInput.text = hardWidth.ToString();
+                canvas.heightInput.text = hardHeight.ToString();
+                canvas.bombsInput.text = hardBombs.ToString();
                 break;
             default:
-                Canvas.widthInput.text = mediumWidth.ToString();
-                Canvas.heightInput.text = mediumHeight.ToString();
-                Canvas.bombsInput.text = mediumBombs.ToString();
+                canvas.widthInput.text = mediumWidth.ToString();
+                canvas.heightInput.text = mediumHeight.ToString();
+                canvas.bombsInput.text = mediumBombs.ToString();
                 break;
         }
     }
 
     void ShowSizeWarning()
     {
-        Canvas.warningLabel.SetActive(true);
-    }
-
-    public void SwapOrientation()
-    {
-        if (Screen.orientation == ScreenOrientation.LandscapeLeft || Screen.orientation == ScreenOrientation.LandscapeRight)
-        {
-            landscapeCanvas.gameObject.SetActive(true);
-            portraitCanvas.gameObject.SetActive(false);
-        }
-        else
-        {
-            portraitCanvas.gameObject.SetActive(true);
-            landscapeCanvas.gameObject.SetActive(false);
-        }
-        prevOrientation = Screen.orientation;
-    }
-
-    void SyncCanvasData()
-    {
-        MinesweeperCanvas canvasOne;
-        MinesweeperCanvas canvasTwo;
-
-        if (Screen.orientation == ScreenOrientation.LandscapeLeft || Screen.orientation == ScreenOrientation.LandscapeRight)
-        {
-            canvasOne = landscapeCanvas;
-            canvasTwo = portraitCanvas;
-        }
-        else
-        {
-            canvasOne = portraitCanvas;
-            canvasTwo = landscapeCanvas;
-        }
-
-        canvasOne.bombCounter.text = canvasTwo.bombCounter.text;
-        canvasOne.sideButtons.gameObject.SetActive(canvasTwo.sideButtons.gameObject.activeSelf);
-
-        var sideButtonOne = canvasOne.sideButtons.GetComponentsInChildren<Toggle>(true)[0];
-        var sideButtonName = sideButtonOne.name;
-        var sideButtonTwo = canvasTwo.sideButtons.GetComponentsInChildren<Toggle>(true)[0].name == sideButtonName ? canvasTwo.sideButtons.GetComponentsInChildren<Toggle>(true)[0] : canvasTwo.sideButtons.GetComponentsInChildren<Toggle>(true)[1];
-        sideButtonOne.isOn = sideButtonTwo.isOn;
-
-        canvasOne.startScreen.SetActive(canvasTwo.startScreen.activeSelf);
-        canvasOne.widthInput.text = canvasTwo.widthInput.text;
-        canvasOne.heightInput.text = canvasTwo.heightInput.text;
-        canvasOne.bombsInput.text = canvasTwo.bombsInput.text;
-        canvasOne.warningLabel.SetActive(canvasTwo.warningLabel.activeSelf);
-
-        var togglesOne = canvasOne.gameDifficultyGroup.GetComponentsInChildren<Toggle>(true);
-        var togglesTwo = canvasTwo.gameDifficultyGroup.GetComponentsInChildren<Toggle>(true);
-        for(int i = 0; i < togglesOne.Length; i++) if (togglesTwo[i].isOn) togglesOne[i].isOn = true;
-
-        canvasOne.gameOverScreen.SetActive(canvasTwo.gameOverScreen.activeSelf);
-        canvasOne.winScreen.SetActive(canvasTwo.winScreen.activeSelf);
-
-        if (Screen.orientation == ScreenOrientation.LandscapeLeft || Screen.orientation == ScreenOrientation.LandscapeRight) landscapeCanvas = canvasOne;
-        else portraitCanvas = canvasOne;
-
-        CameraController.current.ReCalculateMaxSize();
+        canvas.warningLabel.SetActive(true);
     }
 }

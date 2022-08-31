@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class MinesweeperCanvas : MonoBehaviour
+public class MinesweeperCanvas : BaseCanvas
 {
     public GameObject gameOverScreen;
     public GameObject winScreen;
