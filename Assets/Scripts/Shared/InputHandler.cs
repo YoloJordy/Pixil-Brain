@@ -19,6 +19,7 @@ public class InputHandler : MonoBehaviour
 
     float touchStart = 0f;
     InternalTouchPhase touchInternalPhase;
+    float currentTouchDelta;
 
     bool prevIsPointerOverGameObject;
 
@@ -66,8 +67,8 @@ public class InputHandler : MonoBehaviour
                 break;
 
             case TouchPhase.Ended:
-                if (touchInternalPhase == InternalTouchPhase.NEW && !prevIsPointerOverGameObject) InvokeTapped(touchPosition);
-
+                if ((touchInternalPhase == InternalTouchPhase.NEW || currentTouchDelta < 0.1f) && !prevIsPointerOverGameObject) InvokeTapped(touchPosition);
+                currentTouchDelta = 0;
                 touchInternalPhase = InternalTouchPhase.HANDLED;
                 break;
         }
@@ -86,6 +87,7 @@ public class InputHandler : MonoBehaviour
         var touch0 = Input.GetTouch(0);
         var touchPosition = touch0.position;
         var touchLastPosition = touch0.position - touch0.deltaPosition;
+        currentTouchDelta += touch0.deltaPosition.magnitude;
 
         if (Input.touchCount == 2)
         {
