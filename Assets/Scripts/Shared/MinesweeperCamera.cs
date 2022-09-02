@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class MinesweeperCamera : MonoBehaviour
 {
-    public static CameraController current;
+    public static MinesweeperCamera current;
 
-    [SerializeField] Game game;
+    [SerializeField] Minesweeper game;
     [SerializeField] float maxCameraSize = 20;
     [SerializeField] float minCameraSize = 5;
     [SerializeField] float borderWidth = 1;

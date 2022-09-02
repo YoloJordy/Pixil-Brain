@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class Cell
+public class MinesweeperCell : BaseCell
 {
     public enum Type
     {
@@ -15,8 +15,4 @@ public class Cell
 
     public bool revealed;
     public bool flagged;
-
-    public int number;
-
-    public Vector3Int position;
 }

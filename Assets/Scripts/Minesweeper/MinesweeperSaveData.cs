@@ -5,7 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class MinesweeperSaveData : SaveData
 {
-    public Cell[] cells;
+    public MinesweeperCell[] cells;
     public int currentBombs;
     public int totalBombs;
     public int unRevealedCells;
@@ -14,7 +14,7 @@ public class MinesweeperSaveData : SaveData
     public MinesweeperSaveData(Game game) : base(game)
     {
         var minesweeper = (Minesweeper)game;
-        List<Cell> cellList = new();
+        List<MinesweeperCell> cellList = new();
         foreach(var pair in game.cells)
         {
             cellList.Add(pair.Value);

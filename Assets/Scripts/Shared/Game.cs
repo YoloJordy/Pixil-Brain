@@ -5,8 +5,6 @@ using UnityEngine;
 public abstract class Game : MonoBehaviour
 {
     [NonSerialized] public Vector2 size;
-    [NonSerialized] public Board board;
-    [NonSerialized] public Dictionary<Vector3Int, Cell> cells;
     public string gameName;
     protected State state = State.GAMEOVER;
 
@@ -23,6 +21,20 @@ public abstract class Game : MonoBehaviour
 
     public static event Action BeginGame;
     protected static void InvokeBeginGame() => BeginGame?.Invoke();
+
+    protected virtual void Start()
+    {
+        if (GameDatabase.GameHasSave(gameName))
+        {
+            LoadGame();
+        }
+
+        InputHandler.current.Tapped += InputTapped;
+        InputHandler.current.Held += InputHeld;
+        EndGame += RemoveData;
+    }
+
+    protected abstract void LoadGame();
 
     protected abstract void NewGame();
 

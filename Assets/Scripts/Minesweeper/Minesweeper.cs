@@ -13,6 +13,8 @@ public class Minesweeper : Game
     public int height = 16;
     public static Minesweeper current;
 
+    public MinesweeperBoard board;
+
     public int totalBombs = 40;
     [SerializeField] float totalExplodeTime = 2;
     [SerializeField] float totalFlagTime = 0.5f;
@@ -41,7 +43,8 @@ public class Minesweeper : Game
 
     static bool isFlagInput = false;
 
-    Dictionary<Vector3Int, Cell> startingCells;
+    Dictionary<Vector3Int, MinesweeperCell> cells;
+    Dictionary<Vector3Int, MinesweeperCell> startingCells;
 
     public static void SwitchToInput(bool newIsFlagInput)
     {
@@ -58,23 +61,17 @@ public class Minesweeper : Game
     private void Awake()
     {
         if (current == null) current = this;
-        board = GetComponentInChildren<Board>();
+        board = GetComponentInChildren<MinesweeperBoard>();
     }
 
-    private void Start()
+    protected override void Start()
     {
         cells = new();
         startingCells = new();
 
-        if (GameDatabase.GameHasSave(gameName))
-        {
-            LoadGame();
-        }
-
-        InputHandler.current.Tapped += InputTapped;
-        InputHandler.current.Held += InputHeld;
         MinesweeperUI.current.ClickedStart += NewGame;
-        EndGame += RemoveData;
+
+        base.Start();
     }
 
     protected override void NewGame()
@@ -104,7 +101,7 @@ public class Minesweeper : Game
 
         state = State.PLAYING;
     }
-    void LoadGame()
+    protected override void LoadGame()
     {
         Debug.Log("Loading save");
         var data = GameDatabase.LoadMinesweeperData(gameName);
@@ -133,10 +130,10 @@ public class Minesweeper : Game
         {
             for (int y = 0; y < height; y++)
             {
-                Cell cell = new()
+                MinesweeperCell cell = new()
                 {
                     position = new Vector3Int(x, y, 0),
-                    type = Cell.Type.NUMBER,
+                    type = MinesweeperCell.Type.NUMBER,
                 };
 
                 if (cells.ContainsKey(cell.position)) cells[cell.position] = cell;
@@ -188,7 +185,7 @@ public class Minesweeper : Game
     void SetRandomBombCell()
     {
         var cell = cells[new Vector3Int(Random.Range(0, width), Random.Range(0, height))];
-        if (cell.type == Cell.Type.NUMBER && !startingCells.ContainsKey(cell.position)) SetCell(BombCell, cell.position);
+        if (cell.type == MinesweeperCell.Type.NUMBER && !startingCells.ContainsKey(cell.position)) SetCell(BombCell, cell.position);
         else SetRandomBombCell();
     }
 
@@ -202,7 +199,7 @@ public class Minesweeper : Game
                 if (!cells.ContainsKey(key)) continue;
                 var cell = cells[key];
 
-                if (cell.type == Cell.Type.BOMB) continue;
+                if (cell.type == MinesweeperCell.Type.BOMB) continue;
 
                 var newCell = cell;
                 newCell.number = CountCellNumber(cell);
@@ -211,13 +208,13 @@ public class Minesweeper : Game
         }
     }
 
-    int CountCellNumber(Cell cell)
+    int CountCellNumber(MinesweeperCell cell)
     {
         int count = 0;
 
         foreach (var pair in AdjacentCells(cell.position))
         {
-            if (pair.Value.type == Cell.Type.BOMB) count++;
+            if (pair.Value.type == MinesweeperCell.Type.BOMB) count++;
         }
         return count;
     }
@@ -226,7 +223,7 @@ public class Minesweeper : Game
     {      
         foreach(var pair in startingCells) 
         { 
-            if (pair.Value.type == Cell.Type.BOMB)
+            if (pair.Value.type == MinesweeperCell.Type.BOMB)
             {
                 SetCell(NumberCell, pair.Key);
                 SetRandomBombCell();
@@ -234,9 +231,9 @@ public class Minesweeper : Game
         }
     }
 
-    Dictionary<Vector3Int, Cell> AdjacentCells(Vector3Int cellPosition)
+    Dictionary<Vector3Int, MinesweeperCell> AdjacentCells(Vector3Int cellPosition)
     {
-        Dictionary<Vector3Int, Cell> adjacentCells = new();
+        Dictionary<Vector3Int, MinesweeperCell> adjacentCells = new();
         for (int ix = -1; ix <= 1; ix++)
         {
             for (int iy = -1; iy <= 1; iy++)
@@ -279,7 +276,7 @@ public class Minesweeper : Game
     }
 
     //update the values of a cells
-    void SetCell(Func<Cell, Cell> changeFunc, Vector3Int cellPosition)
+    void SetCell(Func<MinesweeperCell, MinesweeperCell> changeFunc, Vector3Int cellPosition)
     {
         if (!IsValidCell(cellPosition)) return;
 
@@ -318,16 +315,16 @@ public class Minesweeper : Game
     }
 
     //what value you want updated
-    Cell RevealCell(Cell cell)
+    MinesweeperCell RevealCell(MinesweeperCell cell)
     {
         if (state == State.PLAYING)
         {
             if (cell.flagged) return cell;
-            if (cell.type == Cell.Type.BOMB) Explode(cell.position);
+            if (cell.type == MinesweeperCell.Type.BOMB) Explode(cell.position);
         }
 
         //if tile is empty reveal all cells around
-        if (cell.type != Cell.Type.BOMB && cell.number == 0 && !cell.revealed)
+        if (cell.type != MinesweeperCell.Type.BOMB && cell.number == 0 && !cell.revealed)
         {
             StartCoroutine(Flood(cell));
         }
@@ -336,12 +333,12 @@ public class Minesweeper : Game
         cell.revealed = true;
         return cell;
     }
-    IEnumerator Flood(Cell cell)
+    IEnumerator Flood(MinesweeperCell cell)
     {
         floodingTiles = true;
         Stopwatch stopwatch = new();
-        Queue<Cell> queue = new();
-        Dictionary<Vector3Int, Cell> floodedCells = new();
+        Queue<MinesweeperCell> queue = new();
+        Dictionary<Vector3Int, MinesweeperCell> floodedCells = new();
         queue.Enqueue(cell);
         floodedCells.Add(cell.position, cell);
 
@@ -374,14 +371,14 @@ public class Minesweeper : Game
         floodedCells.Clear();
         floodingTiles = false;
     }
-    Cell RevealCellFlood(Cell cell)
+    MinesweeperCell RevealCellFlood(MinesweeperCell cell)
     {
         UnRevealedCells--;
         cell.revealed = true;
 
         return cell;
     }
-    Cell FlagCell(Cell cell)
+    MinesweeperCell FlagCell(MinesweeperCell cell)
     {
         if (cell.revealed) return cell;
         if (cell.flagged) Bombs++; else Bombs--;
@@ -389,14 +386,14 @@ public class Minesweeper : Game
 
         return cell;
     }
-    Cell BombCell(Cell cell)
+    MinesweeperCell BombCell(MinesweeperCell cell)
     {
-        cell.type = Cell.Type.BOMB;
+        cell.type = MinesweeperCell.Type.BOMB;
         return cell;
     }
-    Cell NumberCell(Cell cell)
+    MinesweeperCell NumberCell(MinesweeperCell cell)
     {
-        cell.type = Cell.Type.NUMBER;
+        cell.type = MinesweeperCell.Type.NUMBER;
         return cell;
     }
 
@@ -414,7 +411,7 @@ public class Minesweeper : Game
     void Win()
     {
         state = State.WIN;
-        CameraController.current.ResetCameraAsync();
+        MinesweeperCamera.current.ResetCameraAsync();
         InputHandler.current.TakingInput = false;
 
         StartCoroutine(FlagAll());
@@ -437,7 +434,7 @@ public class Minesweeper : Game
                 if (!cells.ContainsKey(key)) continue;
                 var cell = cells[key];
 
-                if (cell.type == Cell.Type.BOMB && !cell.flagged)
+                if (cell.type == MinesweeperCell.Type.BOMB && !cell.flagged)
                 {
                     SetCell(FlagCell, cell.position);
                     if (waitTime > stopwatch.ElapsedMilliseconds / 1000) yield return new WaitForSeconds(waitTime - (stopwatch.ElapsedMilliseconds / 1000));
@@ -455,7 +452,7 @@ public class Minesweeper : Game
     {
         state = State.GAMEOVER;
         SetCell(RevealCell, cellPosition);
-        CameraController.current.ResetCameraAsync();
+        MinesweeperCamera.current.ResetCameraAsync();
         InputHandler.current.TakingInput = false;
 
         StartCoroutine(ExplodeAll());
@@ -478,7 +475,7 @@ public class Minesweeper : Game
                 if (!cells.ContainsKey(key)) continue;
                 var cell = cells[key];
 
-                if (cell.type == Cell.Type.BOMB)
+                if (cell.type == MinesweeperCell.Type.BOMB)
                 {
                     SetCell(RevealCell, cell.position);
                     if (waitTime > stopwatch.ElapsedMilliseconds / 1000) yield return new WaitForSeconds(waitTime - (stopwatch.ElapsedMilliseconds / 1000));

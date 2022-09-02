@@ -139,14 +139,14 @@ public class InputHandler : MonoBehaviour
     public event Action<Vector2> Dragged;
     public void InvokeDragged(Vector2 positionDelta)
     {
-        CameraController.current.Move(positionDelta);
+        MinesweeperCamera.current.Move(positionDelta);
         Dragged?.Invoke(positionDelta);
     }
 
     public event Action<float> Pinched;
     public void InvokePinched(float amount) 
     {
-        CameraController.current.Resize(amount);
+        MinesweeperCamera.current.Resize(amount);
         Pinched?.Invoke(amount); 
     }
 }
