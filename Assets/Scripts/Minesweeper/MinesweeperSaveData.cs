@@ -15,7 +15,7 @@ public class MinesweeperSaveData : SaveData
     {
         var minesweeper = (Minesweeper)game;
         List<MinesweeperCell> cellList = new();
-        foreach(var pair in game.cells)
+        foreach(var pair in minesweeper.cells)
         {
             cellList.Add(pair.Value);
         }

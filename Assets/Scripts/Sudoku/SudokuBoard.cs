@@ -1,63 +1,31 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 public class SudokuBoard : BaseBoard
 {
-    public void DrawBoard(Dictionary<Vector3Int, SudokuCell> cells, Vector2Int size)
+    [SerializeField] GameObject tilePrefab;
+    [SerializeField] GameObject linePrefab;
+    [SerializeField] Canvas canvas;
+    public Vector3 cellSize = new (100, 100);
+    public Dictionary<Vector3Int, SudokuCell> DrawBoard(Vector2Int size)
     {
-        tilemap.ClearAllTiles();
+        Dictionary<Vector3Int, SudokuCell> cells = new();
         int width = size.x;
         int height = size.y;
+
+        Instantiate(linePrefab, new Vector3(tilemap.cellSize.x * 3, height * tilemap.cellSize.y / 2), Quaternion.identity, canvas.transform).transform.localScale = new Vector3(12, height * cellSize.y);
+        Instantiate(linePrefab, new Vector3(tilemap.cellSize.x * 6, height * tilemap.cellSize.y / 2), Quaternion.identity, canvas.transform).transform.localScale = new Vector3(12, height * cellSize.y);
+        Instantiate(linePrefab, new Vector3(width * tilemap.cellSize.x / 2, tilemap.cellSize.y * 3), Quaternion.identity, canvas.transform).transform.localScale = new Vector3(width * cellSize.x, 12);
+        Instantiate(linePrefab, new Vector3(width * tilemap.cellSize.x / 2, tilemap.cellSize.y * 6), Quaternion.identity, canvas.transform).transform.localScale = new Vector3(width * cellSize.x, 12);
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                SudokuCell cell = cells[new Vector3Int(x, y)];
-                tilemap.SetTile(cell.position, GetTile(cell));
+                var position = new Vector3Int(x, y);
+                cells.Add(position, Instantiate(tilePrefab, tilemap.GetCellCenterWorld(position), Quaternion.identity, canvas.transform).GetComponent<SudokuCell>());
             }
         }
-    }
-
-    public Tile GetTile(SudokuCell cell)
-    {
-        if (cell.selected) return GetSelectedTile(cell);
-        else return GetUnSelectedTile(cell);
-    }
-
-    Tile GetUnSelectedTile(SudokuCell cell)
-    {
-        return cell.number switch
-        {
-            1 => tiles["1"],
-            2 => tiles["2"],
-            3 => tiles["3"],
-            4 => tiles["4"],
-            5 => tiles["5"],
-            6 => tiles["6"],
-            7 => tiles["7"],
-            8 => tiles["8"],
-            9 => tiles["9"],
-            _ => tiles["empty"],
-        };
-    }
-
-    Tile GetSelectedTile(SudokuCell cell)
-    {
-        return cell.number switch
-        {
-            1 => tiles["1_selected"],
-            2 => tiles["2_selected"],
-            3 => tiles["3_selected"],
-            4 => tiles["4_selected"],
-            5 => tiles["5_selected"],
-            6 => tiles["6_selected"],
-            7 => tiles["7_selected"],
-            8 => tiles["8_selected"],
-            9 => tiles["9_selected"],
-            _ => tiles["empty_selected"],
-        };
+        return cells;
     }
 }

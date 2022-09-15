@@ -14,7 +14,7 @@ public abstract class BaseBoard : MonoBehaviour
 
     protected void Awake()
     {
-        tilemap = GetComponent<Tilemap>();
+        tilemap = GetComponentInChildren<Tilemap>();
 
         GetResources();
     }

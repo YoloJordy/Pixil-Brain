@@ -43,7 +43,7 @@ public class Minesweeper : Game
 
     static bool isFlagInput = false;
 
-    Dictionary<Vector3Int, MinesweeperCell> cells;
+    public Dictionary<Vector3Int, MinesweeperCell> cells;
     Dictionary<Vector3Int, MinesweeperCell> startingCells;
 
     public static void SwitchToInput(bool newIsFlagInput)
@@ -80,14 +80,9 @@ public class Minesweeper : Game
         GenerateCells();
         board.DrawBoard(cells, new Vector2Int(width, height));
         size = new Vector2(width * board.tilemap.cellSize.x, height * board.tilemap.cellSize.y);
-        InvokeBeginGame();
 
+        InvokeBeginGame();
         Invoke(nameof(SetStateStart), 0.1f);
-    }
-    void SetStateStart() 
-    { 
-        state = State.START;
-        InputHandler.current.TakingInput = true;
     }
 
     //generates new board

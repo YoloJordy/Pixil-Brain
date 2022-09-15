@@ -20,6 +20,8 @@ public class MinesweeperCamera : MonoBehaviour
 
         Game.BeginGame += ResetCameraAsync;
         Game.EndGame += ResetCameraAsync;
+        InputHandler.current.Dragged += Move;
+        InputHandler.current.Pinched += Resize;
     }
 
     public void Move(Vector2 delta)

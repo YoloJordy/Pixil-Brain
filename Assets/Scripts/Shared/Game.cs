@@ -34,6 +34,17 @@ public abstract class Game : MonoBehaviour
         EndGame += RemoveData;
     }
 
+    protected void SetStateStart()
+    {
+        state = State.START;
+        InputHandler.current.TakingInput = true;
+    }
+    protected void SetStatePlaying()
+    {
+        state = State.PLAYING;
+        InputHandler.current.TakingInput = true;
+    }
+
     protected abstract void LoadGame();
 
     protected abstract void NewGame();
@@ -48,11 +59,10 @@ public abstract class Game : MonoBehaviour
     {
         if (focus) return;
 
-        StopAllCoroutines();
-        if (state == State.PLAYING) GameDatabase.SaveDataAsync(this); 
+        if (state == State.PLAYING && gameName == "Minesweeper") GameDatabase.SaveDataAsync(this); 
     }
     private void OnDestroy()
     {
-        if (state == State.PLAYING) GameDatabase.SaveDataAsync(this);
+        if (state == State.PLAYING && gameName == "Minesweeper") GameDatabase.SaveDataAsync(this);
     }
 }
