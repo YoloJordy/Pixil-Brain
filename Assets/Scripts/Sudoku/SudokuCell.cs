@@ -10,12 +10,19 @@ public class SudokuCell : MonoBehaviour
     [SerializeField] Sprite sprite;
     [SerializeField] Sprite selectedSprite;
 
+    bool firstChange = true;
+
     public SudokuCellData data = new();
     SpriteRenderer spriteRenderer;
 
     private void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        var color = Color.white;
+        if (data.original) color = new Color(0.596f, 0.549f, 0.384f, 1f);
+        numberText.color = color;
+        annotationText.color = color;
     }
 
     public void SetNumber(int number)
@@ -24,7 +31,7 @@ public class SudokuCell : MonoBehaviour
         data.annotations.Clear();
         numberText.enabled = true;
         annotationText.enabled = false;
-        if (number == 0) numberText.text = string.Empty;
+        if (number == 0) { if (!data.original) numberText.text = string.Empty; }
         else numberText.text = number.ToString();
     }
 
@@ -52,8 +59,10 @@ public class SudokuCell : MonoBehaviour
         else
         {
             spriteRenderer.sprite = sprite;
-            numberText.color = Color.white;
-            annotationText.color = Color.white;
+            var color = Color.white;
+            if (data.original) color = new Color(0.596f, 0.549f, 0.384f, 1f);
+            numberText.color = color;
+            annotationText.color = color;
         }
         data.selected = !data.selected;
     }

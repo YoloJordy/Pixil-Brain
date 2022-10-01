@@ -6,4 +6,5 @@ public class SudokuCellData : BaseCell
 {
     public bool selected = false;
     public HashSet<int> annotations = new();
+    public bool original = true;
 }
