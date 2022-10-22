@@ -26,6 +26,27 @@ public class MinesweeperUI : BaseUI
     [SerializeField] int hardBombs = 99;
 
     int frameCounter;
+    float time = 0;
+
+    private float GameTime
+    {
+        get { return time; }
+        set 
+        { 
+            time = value;
+            canvas.timer.SetText(FloatToTime(time));
+        }
+    }
+
+    string FloatToTime(float raw)
+    {
+        int time = (int)raw;
+        int sec = time % 60;
+        int min = time / 60 % 60;
+        int hour = time / 3600;
+        Debug.Log(time + " " + hour + " " + min + " " + sec);
+        return (hour > 0 ? hour + "h " : "") + ((min > 0 || hour > 0) ? min + "m " : "") + ((sec > 0 || min > 0 || hour > 0) ? sec + "s " : "");
+    }
 
     private void Awake()
     {
@@ -43,9 +64,11 @@ public class MinesweeperUI : BaseUI
             canvas.fpsCounter.text = ((int)(1 / Time.deltaTime)).ToString();
         }
         if (canvas.bombCounter != null) canvas.bombCounter.text = Minesweeper.current.Bombs.ToString();
+        if (Minesweeper.current.GameState == Game.State.PLAYING) GameTime += Time.deltaTime;
     }
     void ShowEndScreen(bool won)
     {
+
         if (won) canvas.winScreen.SetActive(true);
         else canvas.gameOverScreen.SetActive(true);
 
@@ -60,6 +83,7 @@ public class MinesweeperUI : BaseUI
 
         canvas.startScreen.SetActive(true);
         Minesweeper.current.board.tilemap.ClearAllTiles();
+        GameTime = 0;
     }
 
     public event Action ClickedStart;

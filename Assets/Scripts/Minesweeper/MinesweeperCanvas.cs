@@ -7,6 +7,7 @@ public class MinesweeperCanvas : BaseCanvas
     public GameObject gameOverScreen;
     public GameObject winScreen;
     public GameObject startScreen;
+    public GameObject settingsScreen;
     public ToggleGroup sideButtons;
 
     public ToggleGroup gameDifficultyGroup;
@@ -16,5 +17,6 @@ public class MinesweeperCanvas : BaseCanvas
     public GameObject warningLabel;
 
     public TMP_Text fpsCounter;
+    public TMP_Text timer;
     public TMP_Text bombCounter;
 }

@@ -7,8 +7,13 @@ public abstract class Game : MonoBehaviour
     [NonSerialized] public Vector2 size;
     public string gameName;
     protected State state = State.GAMEOVER;
+    public State GameState 
+    {
+        get { return state; }
+        set { state = value; }
+    }
 
-    protected enum State
+    public enum State
     {
         START,
         PLAYING,
