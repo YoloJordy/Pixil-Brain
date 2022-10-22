@@ -44,7 +44,6 @@ public class MinesweeperUI : BaseUI
         int sec = time % 60;
         int min = time / 60 % 60;
         int hour = time / 3600;
-        Debug.Log(time + " " + hour + " " + min + " " + sec);
         return (hour > 0 ? hour + "h " : "") + ((min > 0 || hour > 0) ? min + "m " : "") + ((sec > 0 || min > 0 || hour > 0) ? sec + "s " : "");
     }
 

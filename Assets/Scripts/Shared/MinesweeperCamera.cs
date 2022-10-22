@@ -84,6 +84,8 @@ public class MinesweeperCamera : MonoBehaviour
         var newSize = (width > height ? width : height) + borderWidth;
 
         maxCameraSize = newSize;
+        Debug.Log("recalculate max size");
         return newSize;
+        
     }
 }
