@@ -7,6 +7,7 @@ public abstract class Game : MonoBehaviour
     [NonSerialized] public Vector2 size;
     public string gameName;
     protected State state = State.GAMEOVER;
+    public float playTime;
     public State GameState 
     {
         get { return state; }
@@ -48,6 +49,11 @@ public abstract class Game : MonoBehaviour
     {
         state = State.PLAYING;
         InputHandler.current.TakingInput = true;
+    }
+
+    protected virtual void Update()
+    {
+        if (GameState == Game.State.PLAYING) playTime += Time.deltaTime;
     }
 
     protected abstract void LoadGame();

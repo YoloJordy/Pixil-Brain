@@ -25,19 +25,6 @@ public class MinesweeperUI : BaseUI
     [SerializeField] int hardHeight = 16;
     [SerializeField] int hardBombs = 99;
 
-    int frameCounter;
-    float time = 0;
-
-    private float GameTime
-    {
-        get { return time; }
-        set 
-        { 
-            time = value;
-            canvas.timer.SetText(FloatToTime(time));
-        }
-    }
-
     string FloatToTime(float raw)
     {
         int time = (int)raw;
@@ -58,12 +45,8 @@ public class MinesweeperUI : BaseUI
 
     private void Update()
     {
-        if (++frameCounter % 100 == 0)
-        {
-            canvas.fpsCounter.text = ((int)(1 / Time.deltaTime)).ToString();
-        }
         if (canvas.bombCounter != null) canvas.bombCounter.text = Minesweeper.current.Bombs.ToString();
-        if (Minesweeper.current.GameState == Game.State.PLAYING) GameTime += Time.deltaTime;
+        canvas.timer.SetText(FloatToTime(Minesweeper.current.playTime));
     }
     void ShowEndScreen(bool won)
     {
@@ -82,7 +65,7 @@ public class MinesweeperUI : BaseUI
 
         canvas.startScreen.SetActive(true);
         Minesweeper.current.board.tilemap.ClearAllTiles();
-        GameTime = 0;
+        Minesweeper.current.playTime = 1;
     }
 
     public event Action ClickedStart;

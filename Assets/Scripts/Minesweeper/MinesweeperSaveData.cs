@@ -10,7 +10,8 @@ public class MinesweeperSaveData : SaveData
     public int totalBombs;
     public int unRevealedCells;
     public int width;
-    public int height; 
+    public int height;
+    public float playTime;
     public MinesweeperSaveData(Game game) : base(game)
     {
         var minesweeper = (Minesweeper)game;
@@ -26,5 +27,6 @@ public class MinesweeperSaveData : SaveData
         unRevealedCells = minesweeper.UnRevealedCells;
         width = minesweeper.width;
         height = minesweeper.height;
+        playTime = minesweeper.playTime;
     }
 }

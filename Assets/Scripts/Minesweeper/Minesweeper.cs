@@ -106,6 +106,7 @@ public class Minesweeper : Game
         UnRevealedCells = data.unRevealedCells;
         width = data.width;
         height = data.height;
+        playTime = data.playTime;
 
         foreach(var cell in data.cells) cells[cell.position] = cell;
 
