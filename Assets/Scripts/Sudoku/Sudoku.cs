@@ -18,6 +18,7 @@ public class Sudoku : Game
 
     bool toggleSelected = false;
     int selectedNumber = 0;
+    SudokuCell firstSelected = null;
 
     private void Awake()
     {
@@ -70,7 +71,7 @@ public class Sudoku : Game
         var cell = cells[cellPosition];
         if (toggleSelected) cell.SetNumber(selectedNumber);
         if (!cell.data.selected) SelectCell(cellPosition);
-        else UnselectAll();
+        else DeselectAll();
     }
 
     protected override void InputHeld(Vector3 position)
@@ -82,25 +83,36 @@ public class Sudoku : Game
 
     bool IsValidCell(Vector3Int cellPosition) => cellPosition.x >= 0 && cellPosition.x < width && cellPosition.y >= 0 && cellPosition.y < height;
 
-    public void NumberToggleSelected(string toggleName)
+    public void NewToggleOn(string toggleName)
     {
         if (toggleName == "X")
         {
             selectedNumber = 0;
+            firstSelected?.SetNumber(selectedNumber);
+            DeselectAll();
         }
         else
         {
+            Debug.Log(toggleName);
             int.TryParse(toggleName, out var number);
-            UnselectAll();
+            firstSelected?.SetNumber(number);
+            DeselectAll();
             SelectNumbers(number);
         }
         toggleSelected = true;
     }
+    public void ToggleOff()
+    {
+        toggleSelected = false;
+        DeselectAll();
+    }
 
     void SelectCell(Vector3Int cellPosition) 
     {
-        UnselectAll();
+        if (cells[cellPosition].data.selected) SudokuUI.current.TogglesOff();
+        DeselectAll();
         var cell = cells[cellPosition];
+        firstSelected = cell;
         if (cell.data.number > 0) SelectNumbers(cell.data.number);
         else
         {
@@ -127,7 +139,7 @@ public class Sudoku : Game
         selectedNumber = number;
     }
 
-    void UnselectAll()
+    void DeselectAll()
     {
         foreach (var cell in selectedCells)
         {
@@ -135,5 +147,6 @@ public class Sudoku : Game
         }
         selectedCells.Clear();
         selectedNumber = 0;
+        firstSelected = null;
     }
 }

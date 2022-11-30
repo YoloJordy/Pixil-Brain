@@ -3,15 +3,32 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class SudokuUI : MonoBehaviour
+public class SudokuUI : BaseUI
 {
+    public static SudokuUI current;
+
     [SerializeField] SudokuCanvas canvas;
+
+    private void Awake()
+    {
+        if (current == null) current = this;
+    }
+
     public void SetSelectedNumber (bool toggleOn)
     {
-        if (!toggleOn) return;
+        if (!toggleOn)
+        {
+            Sudoku.current.ToggleOff();
+            return;
+        }
 
         var toggleName = canvas.numberToggles.ActiveToggles().FirstOrDefault().name;
         if (toggleName == null) return;
-        Sudoku.current.NumberToggleSelected(toggleName);
+        Sudoku.current.NewToggleOn(toggleName);
+    }
+
+    public void TogglesOff()
+    {
+        canvas.numberToggles.SetAllTogglesOff();
     }
 }
