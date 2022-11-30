@@ -27,6 +27,7 @@ public class SudokuCell : MonoBehaviour
 
     public void SetNumber(int number)
     {
+        if (data.original) return;
         data.number = number;
         data.annotations.Clear();
         numberText.enabled = true;
@@ -37,6 +38,7 @@ public class SudokuCell : MonoBehaviour
 
     public void SetAnnotation(int number)
     {
+        if (data.original) return;
         if (data.annotations.Contains(number)) data.annotations.Remove(number);
         else data.annotations.Add(number);
         numberText.enabled = false;

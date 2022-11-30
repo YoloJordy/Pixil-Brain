@@ -64,14 +64,12 @@ public class Sudoku : Game
 
     protected override void InputTapped(Vector3 position)
     {
-        if (state == State.GAMEOVER || state == State.WIN) return;
+        if (state == State.GAMEOVER || state == State.WIN || selectedNumber == 0) return;
         var cellPosition = GetClickedCellPosition(position);
         if (!IsValidCell(cellPosition)) return;
-
+        
         var cell = cells[cellPosition];
         if (toggleSelected) cell.SetNumber(selectedNumber);
-        if (!cell.data.selected) SelectCell(cellPosition);
-        else DeselectAll();
     }
 
     protected override void InputHeld(Vector3 position)
